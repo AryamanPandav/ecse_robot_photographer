@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Global variables
+TO_EMAIL="apan45@student.monash.edu"
+FROM_EMAIL="mms.auto.testing@gmail.com"
+
+# Make temporary file containing email contents
+TEMP_EMAIL_FILENAME=".email-ip-contents.txt"
+IP_ADDRESS_FILENAME=".ip-address.txt"
+
+# Email info
+echo "To: $TO_EMAIL" > $TEMP_EMAIL_FILENAME
+echo "From: $FROM_EMAIL" >> $TEMP_EMAIL_FILENAME
+echo "Subject: $HOSTNAME's IP Address" >> $TEMP_EMAIL_FILENAME
+echo "" >> $TEMP_EMAIL_FILENAME
+echo "" >> $TEMP_EMAIL_FILENAME
+
+# Get IP address
+sudo ifconfig wlan0 | grep inet\ addr > $IP_ADDRESS_FILENAME
+
+# Get rid of unnecessary details provided by ifconfig
+sudo sed -i -E 's/Bcast:.{0,50}//g' $IP_ADDRESS_FILENAME
+sudo sed -i -E 's/.{0,50}inet addr://g' $IP_ADDRESS_FILENAME
+
+# Email body
+sudo cat $IP_ADDRESS_FILENAME >> $TEMP_EMAIL_FILENAME
+
+# CLI feedback
+sudo cat $IP_ADDRESS_FILENAME | tr -d ' \n' && echo " emailed to $TO_EMAIL from $FROM_EMAIL!"
+
+# Send mail
+if [ $ADDRFAM = "inet" ] && [ $DEVICE_IFACE = "wlan0" ]; then
+	# Prevents mail sending twice for IPv4 and IPv6
+	sudo ssmtp apan45@student.monash.edu < $TEMP_EMAIL_FILENAME
+fi
+
+# Remove temporary files
+# rm $TEMP_EMAIL_FILENAME
+# rm $IP_ADDRESS_FILENAME
+
